@@ -7,7 +7,6 @@ Este projeto consiste na modelagem e implementação de um banco de dados para u
 O objetivo foi praticar conceitos fundamentais de Banco de Dados, como modelagem relacional, integridade de dados e implementação de regras de negócio através de constraints e triggers.
 
 
-##DER
 ```mermaid
 erDiagram
 
