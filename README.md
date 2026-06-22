@@ -47,7 +47,9 @@ erDiagram
         string tipo_perfil
     }
 ```
-
+Regra de Negócio:
+• Máximo de 4 perfis de streaming por usuário.
+• Implementada através de Trigger SQL.
 
 ## Funcionalidades
 
