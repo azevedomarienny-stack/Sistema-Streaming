@@ -2,14 +2,12 @@
 
 ## Sobre o Projeto
 
-Este projeto consiste na modelagem e implementação de um banco de dados para uma plataforma de streaming utilizando SQL e SQLite.
+Este projeto consiste na modelagem e implementação de um banco de dados relacional para uma plataforma de streaming utilizando **SQL** e **SQLite**. 
 
-O objetivo foi praticar conceitos fundamentais de Banco de Dados, como modelagem relacional, integridade de dados e implementação de regras de negócio através de constraints e triggers.
-
+O objetivo principal foi aplicar na prática conceitos essenciais de engenharia de dados, focando em integridade referencial, constraints avançadas e automação de regras de negócio diretamente na camada de persistência.
 
 ```mermaid
 erDiagram
-
     PERFIS_ACESSO ||--o{ USUARIOS : possui
     PLANOS ||--o{ USUARIOS : assina
     USUARIOS ||--o{ PERFIS_STREAMING : cria
@@ -46,59 +44,74 @@ erDiagram
         string tipo_perfil
     }
 ```
-Regra de Negócio:
-• Máximo de 4 perfis de streaming por usuário.
-• Implementada através de Trigger SQL.
 
-## Funcionalidades
+---
 
-* Cadastro de usuários
-* Cadastro de planos de assinatura
-* Controle de perfis de acesso
-* Criação de perfis de streaming por usuário
-* Relacionamentos entre tabelas utilizando chaves estrangeiras
-* Exclusão em cascata
-* Restrições de integridade (CHECK e UNIQUE)
-* Trigger para limitar a quantidade máxima de perfis por conta
+## Funcionalidades e Destaques Técnicos
 
-## Estrutura do Banco
+* **Modelagem Relacional Sólida:** Mapeamento completo de cardinalidades (1:N) estruturado de forma escalável.
+* **Garantia de Consistência (`Constraints`):** Utilização de cláusulas `CHECK` e `UNIQUE` para mitigar a inserção de dados inconsistentes (como valores negativos ou e-mails duplicados).
+* **Integridade Referencial Automatizada:** Configuração de `ON DELETE CASCADE` para evitar registros órfãos ao remover contas de usuários.
+* **Automação via Camada de Dados (`Triggers`):** Implementação de gatilhos automáticos para validação de regras de negócio restritivas antes do commit de novos registros.
 
-### Tabelas
+---
 
-* perfis_acesso
-* planos
-* usuarios
-* perfis_streaming
+## Regras de Negócio e Amostras de Código
 
-### Relacionamentos
+### 1. Validação de Limite de Perfis (Trigger)
+Cada usuário cadastrado na plataforma pode possuir, no máximo, **4 perfis de streaming**. Caso o limite seja atingido, a operação é abortada lançando uma exceção personalizada.
 
-* Um usuário possui um perfil de acesso.
-* Um usuário pode possuir um plano de assinatura.
-* Um usuário pode possuir vários perfis de streaming.
-* Ao excluir um usuário, seus perfis são removidos automaticamente.
+```sql
+CREATE TRIGGER checar_limite_perfis
+BEFORE INSERT ON perfis_streaming
+FOR EACH ROW
+BEGIN
+    SELECT CASE
+        WHEN (SELECT COUNT(*) FROM perfis_streaming WHERE id_usuario = NEW.id_usuario) >= 4
+        THEN RAISE(ABORT, 'Erro: Limite máximo de 4 perfis atingido para este usuário.')
+    END;
+END;
+```
 
-## Tecnologias Utilizadas
+### 2. Criação das Tabelas e Constraints de Validação
+```sql
+CREATE TABLE planos (
+    id_plano INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome_plano TEXT NOT NULL UNIQUE,
+    valor REAL NOT NULL CHECK(valor >= 0),
+    quantidade_telas INTEGER NOT NULL CHECK(quantidade_telas > 0)
+);
 
-* SQL
-* SQLite
-* SQLiteOnline
+CREATE TABLE perfis_streaming (
+    id_perfil_streaming INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_usuario INTEGER NOT NULL,
+    nome_perfil_streaming TEXT NOT NULL,
+    tipo_perfil TEXT DEFAULT 'Adulto' CHECK(tipo_perfil IN ('Adulto', 'Infantil')),
+    UNIQUE(id_usuario, nome_perfil_streaming),
+    FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario) ON DELETE CASCADE
+);
+```
 
-## Regra de Negócio Implementada
+---
 
-Cada usuário pode possuir no máximo 4 perfis de streaming.
+## Tecnologias e Ferramentas
 
-Essa validação é realizada através de uma trigger executada antes da inserção de novos perfis.
+* **Linguagem:** SQL (Structured Query Language)
+* **SGBD:** SQLite
+* **Interface de Desenvolvimento:** SQLiteOnline
+* **Documentação:** Mermaid.js / Markdown
 
-## Testes Realizados
+---
 
-* Criação das tabelas
-* Inserção de usuários
-* Inserção de planos
-* Criação de perfis de streaming
-* Validação das chaves estrangeiras
-* Teste de exclusão em cascata
-* Teste do limite máximo de perfis por conta
+## Testes de Validação Executados
 
-## Objetivo
+Para garantir o perfeito funcionamento do ecossistema, os seguintes cenários de testes foram validados com sucesso:
+1. **Cenário de Fluxo Padrão:** Inserção em massa de planos, usuários e perfis associados respeitando as restrições.
+2. **Cenário de Limpeza Automatizada:** Exclusão de uma conta mãe e validação do sumiço em cascata de seus respectivos perfis.
+3. **Cenário de Estresse da Trigger:** Tentativa de inserção do 5º perfil para o mesmo usuário, resultando no bloqueio da query e retorno da mensagem de erro esperada.
 
-Projeto desenvolvido para praticar modelagem de banco de dados, SQL e implementação de regras de negócio em um cenário semelhante ao de plataformas reais de streaming.
+---
+
+## Objetivo Profissional
+
+Projeto desenvolvido de forma independente para consolidar conhecimentos fundamentais em arquitetura de bancos de dados relacionais e regras de negócio sob o escopo de aplicações de larga escala do mundo real (como Netflix, Disney+ e Prime Video).
